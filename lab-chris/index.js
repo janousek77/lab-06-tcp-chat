@@ -5,8 +5,19 @@ const server = net.createServer();
 
 let clientPool = [];
 
+let dm = (user, msg) => {
+  let dmMsg = clientPool.indexOf(user);
+  dmMsg.write(`${user}: ${msg}`);
+};
+
+let troll = (msg, num) => {
+  for(let i = 0; i < num; i++) {
+    clientPool.forEach(socket => socket.write(`${msg}\n`));
+  }
+};
+
 server.on('connection', (socket) => {
-  socket.write('hello socket, welcome to slugchat!\n');
+  socket.write('Welcome to the chat!\n');
   socket.nickname = `guest_${Math.random()}`;
   console.log(`${socket.nickname} connected!`);
 
@@ -29,11 +40,15 @@ server.on('connection', (socket) => {
       return;
     }
 
-    // "/dm slugbyte how are you"
-    // if(data.startsWith('/dm')){
-    //   let content = data.split('/dm')[1] || '';
-      // 'slugbyte how are you'
-    // }
+    if(data.startsWith('/dm')) {
+      dm(data.split('/dm')[1].trim());
+      return;
+    }
+
+    if(data.startsWith('/troll')) {
+      troll(data.split('/troll')[1].trim(), 5);
+      return;
+    }
 
     clientPool.forEach((item) => {
       item.write(`${socket.nickname}: ${data}`);
