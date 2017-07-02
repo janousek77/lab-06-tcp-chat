@@ -4,27 +4,26 @@ const net = require('net');
 const server = net.createServer();
 
 let clientPool = [];
+let curUser = 1;
 
-let dm = (user, msg) => {
-  let dmMsg = clientPool.indexOf(user);
-  dmMsg.write(`${user}: ${msg}`);
-};
+let dmRecipient;
+function findRecipient(clientPool) {
+  return clientPool.nickname === dmRecipient;
+}
 
-let troll = (msg, num) => {
-  for(let i = 0; i < num; i++) {
-    clientPool.forEach(socket => socket.write(`${msg}\n`));
-  }
-};
+server.on('connection', (socket) =>{
+  console.log('socket connected.\n');
+  socket.write('Welcome to the chat.\n');
 
-server.on('connection', (socket) => {
-  socket.write('Welcome to the chat!\n');
-  socket.nickname = `guest_${Math.random()}`;
-  console.log(`${socket.nickname} connected!`);
 
+  socket.nickname = `Guest${curUser}`;
+  curUser++;
   clientPool = [...clientPool, socket];
+  socket.write(`You\'re connected as ${socket.nickname}\n`);
+
 
   let handleDisconnect = () => {
-    console.log(`${socket.nickname} left the chat`);
+    console.log(`${socket.nickname} has disconnected\n`);
     clientPool = clientPool.filter(item => item !== socket);
   };
 
@@ -33,26 +32,52 @@ server.on('connection', (socket) => {
 
   socket.on('data', (buffer) => {
     let data = buffer.toString();
-    if(data.startsWith('/nickname')){
-      socket.nickname = data.split('/nickname ')[1] || socket.nickname;
+    let content = buffer.toString();
+
+    let print = (users, content) => {
+      users.forEach((user) => {
+        user.write(`${socket.nickname}: ${content.toString()}`);
+      });
+    };
+
+    if (data.startsWith('/nick')){
+      socket.nickname = data.split('/nick')[1] || socket.nickname;
       socket.nickname = socket.nickname.trim();
-      socket.write(`you are now know as ${socket.nickname}`);
+      socket.write(`you are now ${socket.nickname}\n`);
       return;
     }
 
-    if(data.startsWith('/dm')) {
-      dm(data.split('/dm')[1].trim());
+
+    if (data.startsWith('/dm')){
+      let wholeMsg = data.split('/dm ')[1] || '';
+      dmRecipient = wholeMsg.split(/\s+/)[0];
+      let content = wholeMsg.replace(dmRecipient, '');
+
+      print([clientPool.find(findRecipient)], (`**DM** => ${content}`));
       return;
     }
 
-    if(data.startsWith('/troll')) {
-      troll(data.split('/troll')[1].trim(), 5);
+    if (data.startsWith('/troll')){
+      let wholeMsg = data.split('/troll ')[1] || '';
+      let trollNum = wholeMsg.split(/\s+/)[0];
+      let content = wholeMsg.replace(trollNum, '');
+      findRecipient(clientPool);
+      for(let i = 0; i < trollNum; i++){
+        print(clientPool, content);
+      }
       return;
     }
 
-    clientPool.forEach((item) => {
-      item.write(`${socket.nickname}: ${data}`);
-    });
+    if (data.startsWith('/quit')){
+      socket.end();
+      let index = clientPool.indexOf(socket);
+      clientPool.splice(index,1);
+      return;
+    }
+
+    else{
+      print(clientPool, content);
+    }
   });
 });
 
