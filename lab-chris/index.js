@@ -52,7 +52,6 @@ server.on('connection', (socket) =>{
       let wholeMsg = data.split('/dm ')[1] || '';
       dmRecipient = wholeMsg.split(/\s+/)[0];
       let content = wholeMsg.replace(dmRecipient, '');
-
       print([clientPool.find(findRecipient)], (`**DM** => ${content}`));
       return;
     }
@@ -61,7 +60,6 @@ server.on('connection', (socket) =>{
       let wholeMsg = data.split('/troll ')[1] || '';
       let trollNum = wholeMsg.split(/\s+/)[0];
       let content = wholeMsg.replace(trollNum, '');
-      findRecipient(clientPool);
       for(let i = 0; i < trollNum; i++){
         print(clientPool, content);
       }
