@@ -6,9 +6,9 @@ const server = net.createServer();
 let clientPool = [];
 let curUser = 1;
 
-let dmRecipient;
-function findRecipient(clientPool) {
-  return clientPool.nickname === dmRecipient;
+let dmtarget;
+function findTarget(clientPool) {
+  return clientPool.nickname === dmtarget;
 }
 
 server.on('connection', (socket) =>{
@@ -50,9 +50,9 @@ server.on('connection', (socket) =>{
 
     if (data.startsWith('/dm')){
       let wholeMsg = data.split('/dm ')[1] || '';
-      dmRecipient = wholeMsg.split(/\s+/)[0];
-      let content = wholeMsg.replace(dmRecipient, '');
-      print([clientPool.find(findRecipient)], (`**DM** => ${content}`));
+      dmtarget = wholeMsg.split(/\s+/)[0];
+      let content = wholeMsg.replace(dmtarget, '');
+      print([clientPool.find(findTarget)], (`(DM):${content}`));
       return;
     }
 
